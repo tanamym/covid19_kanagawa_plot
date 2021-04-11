@@ -226,6 +226,7 @@ server <- function(input, output) {
                 #date_labels = "%y-%m-%d",
                          #limits = c(input$date1,input$date2)
                 )+
+            scale_y_continuous(breaks = seq(0,100,20))+
             theme(axis.text.x = element_text(angle = 90, hjust = 1))
     })
     output$line2<-
@@ -281,8 +282,8 @@ server <- function(input, output) {
                 #geom_text(aes(label=Residential_City))+
                 labs(x="累積7日",y="累積28日",colour="都道府県")+
                 geom_vline(xintercept=c(0,2.5,15,25))+
-                scale_x_continuous(breaks = seq(0,input$num1,5))+
-                scale_y_continuous(breaks = seq(0,input$num2,20))+
+                scale_x_continuous(breaks = seq(0,input$num1,5),limits = c(0,input$num1))+
+                scale_y_continuous(breaks = seq(0,input$num2,20),limits = c(0,input$num2))+
                 ggtitle(paste0("人口10万人当たりの累積感染者数（",input$date2,"先週比）"))+
                 scale_colour_manual(values = c("選択した都道府県"="red","それ以外の都道府県"="black"))
             
