@@ -85,7 +85,7 @@ ui <- fluidPage(
                                  fluidRow(
                                      column(6,
                                             numericInput("num1","x軸の最大値の設定",
-                                              value=30)),
+                                              value=60)),
                                      column(6,
                                             numericInput("num2","y軸の最大値の設定",
                                               value=100)
@@ -99,11 +99,11 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     data<-
-        read.csv("coviddata.csv")%>%
+        read.csv("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/coviddata.csv",encoding = "SJIS")%>%
         filter(!is.na(Fixed_Date))%>%
         mutate(Fixed_Date=as.Date(Fixed_Date))
     jinko<-
-        read.csv("jinko.csv")
+        read.csv("jinko.csv",encoding = "SJIS")
     date1<-
         data%>%
         data.frame()%>%
