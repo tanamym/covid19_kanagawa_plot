@@ -1,10 +1,30 @@
-
+if(!require(dplyr)){
+    install.packages("dplyr")
+}
 library(dplyr)
-library(lubridate)
-library(ggplot2)
-library(shiny)
-library(ggrepel)
 
+if(!require(lubridate)){
+    install.packages("lubridate")
+}
+library(lubridate)
+
+if(!require(ggplot2)){
+    install.packages("ggplot2")
+}
+library(ggplot2)
+
+if(!require(shiny)){
+    install.packages("shiny")
+}
+library(shiny)
+if(!require(ggrepel)){
+    install.packages("ggrepel")
+}
+library(ggrepel)
+if(!require(data.table)){
+    install.packages("data.table")
+}
+library(data.table)
 ui <- fluidPage(
     list(tags$head(tags$style(HTML("
                                  .multicol { 
@@ -99,7 +119,7 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     data<-
-        read.csv("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/coviddata.csv",encoding = "SJIS")%>%
+        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/coviddata.csv",encoding = "UTF-8")%>%
         filter(!is.na(Fixed_Date))%>%
         mutate(Fixed_Date=as.Date(Fixed_Date))
     jinko<-
