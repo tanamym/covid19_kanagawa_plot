@@ -152,27 +152,43 @@ server <- function(input, output) {
                       max = date1[1,1],
                       value = date1[1,1])
         })
-    days<-
+    # days<-
+    #     reactive({
+    #         data%>%
+    #             distinct(Fixed_Date,Residential_City)%>%
+    #             mutate(
+    #                 wday1=lubridate::wday(Fixed_Date,label = TRUE),
+    #                 wday2=lubridate::wday(input$date2,label = TRUE),
+    #                 #wday2=lubridate::wday("2021-05-29",label = TRUE),
+    #                    wd_flag=(wday1==wday2),
+    #                 diff=input$date1-Fixed_Date
+    #                 #diff=as.Date("2021-05-29")-Fixed_Date
+    #                 )%>%
+    #             filter(wd_flag==T)%>%
+    #             #arrange(desc(Fixed_Date))%>%
+    #             group_by(Residential_City)%>%
+    #             mutate(rank=min_rank(desc(diff)))%>%
+    #             filter(rank==1)%>%
+    #             ungroup()
+    #             
+    #     })
+    flag<-
         reactive({
-            data%>%
-                count(Fixed_Date,Residential_City)%>%
-                mutate(wday1=lubridate::wday(Fixed_Date,label = TRUE),
-                       wday2=lubridate::wday(input$date1,label = TRUE),
-                       wd_flag=(wday1==wday2),
-                       diff=input$date2-Fixed_Date)%>%
-                filter(wd_flag==T)%>%
-                arrange(desc(Fixed_Date))%>%
-                group_by(Residential_City)%>%
-                mutate(rank=min_rank(diff))%>%
-                filter(rank==1)
-                
+            data.frame(date=as.Date(input$date1))%>%
+                #data.frame(date=as.Date("2020-04-21"))%>%
+                mutate(wday=lubridate::wday(date),
+                       wday2=lubridate::wday(input$date2,label = TRUE),
+                       #wday2=lubridate::wday("2021-05-29"),
+                       diff=as.numeric(wday2)-as.numeric(wday),
+                       date2=date+diff)
         })
     data2<-
         reactive({
             
                 data%>%
                 count(Fixed_Date,Residential_City)%>%
-                filter(Fixed_Date<days()$Fixed_Date,Fixed_Date>=input$date1)%>%
+                #filter(Fixed_Date<days()$Fixed_Date,Fixed_Date>=input$date1)%>%
+                filter(Fixed_Date<=input$date2,Fixed_Date>=flag()$date2)%>%
                 tidyr::complete(Fixed_Date=tidyr::full_seq(Fixed_Date,1),Residential_City,fill = list(n = 0))%>%
                 #arrange(desc(Fixed_Date))%>%
                 arrange(Fixed_Date)%>%
@@ -232,6 +248,7 @@ server <- function(input, output) {
         
        
     
+        
     output$line <- renderPlot({
         data4()%>%
             filter(Residential_City%in%input$pre)%>%
@@ -239,12 +256,13 @@ server <- function(input, output) {
             ggplot2::geom_line()+
             labs(y="10万人当たりの感染者数",
                  color="都道府県")+
-            # scale_x_continuous(breaks=seq(as.Date(input$date1),as.Date(input$date2),7),
-            #                        limits = c(as.Date(input$date1),as.Date(input$date2)))+
+            # scale_x_continuous(breaks=seq(flag()$date2,as.Date(input$date2),7),
+            #                        limits = c(flag()$date2,as.Date(input$date2)))+
             scale_x_date(#date_breaks = "1 week",
-                breaks = seq(as.Date(input$date1),as.Date(input$date2),"7 days"),
+                #breaks = seq(as.Date(input$date1),as.Date(input$date2),"7 days"),
+                breaks = seq(flag()$date2,as.Date(input$date2),"7 days"),
                 #date_labels = "%y-%m-%d",
-                         #limits = c(input$date1,input$date2)
+                         limits = c(flag()$date2,input$date2)
                 )+
             scale_y_continuous(breaks = seq(0,100,20))+
             theme(axis.text.x = element_text(angle = 90, hjust = 1))
