@@ -110,7 +110,25 @@ ui <- fluidPage(
                                             numericInput("num2","y軸の最大値の設定",
                                               value=100)
                                             )),
-                                 plotOutput("line2")))
+                                 plotOutput("line2")),
+                        tabPanel("10万人当たりの感染者数と増加率",
+                                 fluidRow(
+                                     column(6,
+                                            numericInput("num3","x軸の最大値の設定",
+                                                         value=60)),
+                                     column(6,
+                                            numericInput("num4","y軸の最大値の設定",
+                                                         value=5))),
+                                 plotOutput("line3")),
+                        tabPanel("増加率",
+                                 fluidRow(
+                                     column(6,
+                                            numericInput("num5","x軸の最大値の設定",
+                                                         value=2)),
+                                     column(6,
+                                            numericInput("num6","y軸の最大値の設定",
+                                                         value=5))),
+                                 plotOutput("line4")))
            
         )
     )
@@ -267,51 +285,72 @@ server <- function(input, output) {
             scale_y_continuous(breaks = seq(0,100,20))+
             theme(axis.text.x = element_text(angle = 90, hjust = 1))
     })
-    output$line2<-
-        renderPlot({
-            
-            #7-1
+    data8<-
+        reactive({
+            #累積7日_1
             data5_1<-
                 data5%>%
                 filter(Fixed_Date<=input$date2,
                        Fixed_Date>=input$date2-6)%>%
                 count(Residential_City,jinko)%>%
-                mutate(count1_j7=n/jinko*100000)%>%
+                rename("count_1"="n")%>%
+                mutate(count1_j7=count_1/jinko*100000)%>%
                 filter(!is.na(count1_j7))%>%
-                select(Residential_City,count1_j7)
-            #28-1
+                select(Residential_City,count_1,count1_j7)
+            #累積28日_1
             data5_2<-
                 data5%>%
                 filter(Fixed_Date<=input$date2,
                        Fixed_Date>=input$date2-27)%>%
                 count(Residential_City,jinko)%>%
-                mutate(count1_j28=n/jinko*100000)%>%
+                rename("count28_1"="n")%>%
+                mutate(count1_j28=count28_1/jinko*100000)%>%
                 filter(!is.na(count1_j28))%>%
-                select(Residential_City,count1_j28)
+                select(Residential_City,count28_1,count1_j28)
             data6<-
                 left_join(data5_1,data5_2)
-
-            #7-1
+            
+            #累積7日_2
             data5_3<-
                 data5%>%
                 filter(Fixed_Date<=input$date2-7,
                        Fixed_Date>=input$date2-6-7)%>%
                 count(Residential_City,jinko)%>%
-                mutate(count2_j7=n/jinko*100000)%>%
+                rename("count_2"="n")%>%
+                mutate(count2_j7=count_2/jinko*100000)%>%
                 filter(!is.na(count2_j7))%>%
-                select(Residential_City,count2_j7)
-            #28-1
+                select(Residential_City,count_2,count2_j7)
+            #累積28日_2
             data5_4<-
                 data5%>%
                 filter(Fixed_Date<=input$date2-7,
                        Fixed_Date>=input$date2-27-7)%>%
                 count(Residential_City,jinko)%>%
-                mutate(count2_j28=n/jinko*100000)%>%
+                rename("count28_2"="n")%>%
+                mutate(count2_j28=count28_2/jinko*100000)%>%
                 filter(!is.na(count2_j28))%>%
-                select(Residential_City,count2_j28)
+                select(Residential_City,count28_2,count2_j28)
             data7<-
                 left_join(data5_3,data5_4)
+            #累積7日_3
+            data5_5<-
+                data5%>%
+                filter(Fixed_Date<=input$date2-7-7,
+                       Fixed_Date>=input$date2-6-7-7)%>%
+                count(Residential_City,jinko)%>%
+                rename("count_3"="n")%>%
+                mutate(count3_j7=count_3/jinko*100000)%>%
+                filter(!is.na(count3_j7))%>%
+                select(Residential_City,count_3,count3_j7)
+          
             inner_join(data6,data7)%>%
+                left_join(data5_5)
+        })
+    output$line2<-
+        renderPlot({
+            
+           
+            data8()%>%
                 #filter(Residential_City%in%input$pre)%>%
                 ggplot(aes(x=count1_j7,y=count1_j28,colour=ifelse(Residential_City%in%input$pre,"選択した都道府県","それ以外の都道府県")))+
                 geom_segment(aes(xend=count2_j7,yend=count2_j28))+
@@ -319,12 +358,67 @@ server <- function(input, output) {
                 geom_text_repel(aes(label=Residential_City))+
                 #geom_text(aes(label=Residential_City))+
                 labs(x="累積7日",y="累積28日",colour="都道府県")+
-                geom_vline(xintercept=c(0,2.5,15,25))+
+                geom_vline(xintercept=c(0,2.5,15,25),colour = c("black", "yellow","orange","red"))+
+                geom_text(aes(x=2.5,y=10,label="ステージ2", angle=90))+
+                geom_text(aes(x=15,y=10,label="ステージ3", angle=90))+
+                geom_text(aes(x=25,y=10,label="ステージ4", angle=90))+
                 scale_x_continuous(breaks = seq(0,input$num1,5),limits = c(0,input$num1))+
                 scale_y_continuous(breaks = seq(0,input$num2,20),limits = c(0,input$num2))+
                 ggtitle(paste0("人口10万人当たりの累積感染者数（",input$date2,"先週比）"))+
                 scale_colour_manual(values = c("選択した都道府県"="red","それ以外の都道府県"="black"))
             
+        })
+    data9<-
+        reactive({
+            data8()%>%
+                mutate(zouka1=count_1/count_2,
+                       zouka2=count_2/count_3)
+        })
+    output$line3<-
+        renderPlot({
+            data9()%>%
+                ggplot(aes(x=count1_j7,y=zouka1,colour=ifelse(Residential_City%in%input$pre,"選択した都道府県","それ以外の都道府県")))+
+                geom_segment(aes(xend=count2_j7,yend=zouka2))+
+                geom_point()+
+                geom_text_repel(aes(label=Residential_City))+
+                geom_vline(xintercept=c(0,2.5,15,25),colour = c("black", "yellow","orange","red"))+
+                geom_text(aes(x=2.5,y=3,label="ステージ2", angle=90))+
+                geom_text(aes(x=15,y=3,label="ステージ3", angle=90))+
+                geom_text(aes(x=25,y=3,label="ステージ4", angle=90))+
+                geom_hline(yintercept=c(0,1.0,1.05,1.10,1.15),colour = c("black", "yellow","orange","pink","red"))+
+                geom_text(aes(x=35,y=1,label="同数"))+
+                geom_text(aes(x=40,y=1.05,label="14日で倍"))+
+                geom_text(aes(x=45,y=1.10,label="7日で倍"))+
+                geom_text(aes(x=50,y=1.15,label="5日で倍"))+
+                labs(x="累積7日",y="増加率",colour="都道府県")+
+                scale_x_continuous(breaks = seq(0,input$num3,5),limits = c(0,input$num3))+
+                scale_y_continuous(breaks = seq(0,input$num4,1.0),limits = c(0,input$num4))+
+                ggtitle(paste0("人口10万人当たりの累積感染者数と増加率（",input$date2,"）"))+
+                scale_colour_manual(values = c("選択した都道府県"="red","それ以外の都道府県"="black"))
+            
+        })
+    output$line4<-
+        renderPlot({
+            data9()%>%
+                ggplot(aes(x=zouka1,y=zouka2,colour=ifelse(Residential_City%in%input$pre,"選択した都道府県","それ以外の都道府県")))+
+                geom_point()+
+                #geom_smooth(method = "lm")+
+                geom_text_repel(aes(label=Residential_City))+
+                geom_vline(xintercept=c(0,1.0,1.05,1.10,1.15),colour = c("black", "yellow","orange","pink","red"))+
+                geom_text(aes(x=1,y=1,label="同数", angle=90))+
+                geom_text(aes(x=1.05,y=1,label="14日で倍", angle=90))+
+                geom_text(aes(x=1.10,y=1,label="7日で倍", angle=90))+
+                geom_text(aes(x=1.15,y=1,label="5日で倍", angle=90))+
+                geom_text(aes(x=0,y=1,label="同数"))+
+                geom_text(aes(x=0.1,y=1.05,label="14日で倍"))+
+                geom_text(aes(x=0.2,y=1.10,label="7日で倍"))+
+                geom_text(aes(x=0.3,y=1.15,label="5日で倍"))+
+                geom_hline(yintercept=c(0,1.0,1.05,1.10,1.15),colour = c("black", "yellow","orange","pink","red"))+
+                scale_x_continuous(breaks = seq(0,input$num5,0.25),limits = c(0,input$num5))+
+                scale_y_continuous(breaks = seq(0,input$num6,1.0),limits = c(0,input$num6))+
+                labs(x="増加率今週",y="増加率先週",colour="都道府県")+
+                ggtitle(paste("増加率",input$date2,"対先週"))+
+                scale_colour_manual(values = c("選択した都道府県"="red","それ以外の都道府県"="black"))
         })
 }
 
