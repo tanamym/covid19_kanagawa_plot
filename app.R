@@ -111,14 +111,14 @@ ui <- fluidPage(
                                               value=100)
                                             )),
                                  plotOutput("line2")),
-                        tabPanel("10万人当たりの感染者数と増加率",
+                        tabPanel("10万人当たりの感染者数と前日比幾何平均",
                                  fluidRow(
                                      column(6,
                                             numericInput("num3","x軸の最大値の設定",
                                                          value=60)),
                                      column(6,
                                             numericInput("num4","y軸の最大値の設定",
-                                                         value=5))),
+                                                         value=2))),
                                  plotOutput("line3")),
                         tabPanel("増加率",
                                  fluidRow(
@@ -127,7 +127,7 @@ ui <- fluidPage(
                                                          value=2)),
                                      column(6,
                                             numericInput("num6","y軸の最大値の設定",
-                                                         value=5))),
+                                                         value=2))),
                                  plotOutput("line4")))
            
         )
@@ -369,22 +369,52 @@ server <- function(input, output) {
             
         })
     data9<-
-        reactive({
-            data8()%>%
-                mutate(zouka1=count_1/count_2,
-                       zouka2=count_2/count_3)
-        })
+        data%>%
+        count(Residential_City,Fixed_Date)%>%
+        filter(Residential_City%in%c("横浜市","川崎市川崎区","川崎市幸区",
+                                     "川崎市中原区","川崎市高津区","川崎市多摩区",
+                                     "川崎市宮前区", "川崎市麻生区","相模原市",
+                                     "横須賀市","平塚市","鎌倉市","藤沢市",
+                                     "小田原市","茅ヶ崎市","逗子市","三浦市",
+                                     "秦野市","厚木市","大和市","伊勢原市",
+                                     "海老名市","座間市","南足柄市",
+                                     "綾瀬市","葉山町","寒川町","大磯町",
+                                     "二宮町","中井町","大井町","松田町",
+                                     "山北町","開成町","箱根町","真鶴町",
+                                     "湯河原町","愛川町","清川村"))%>%
+        tidyr::complete(Fixed_Date=tidyr::full_seq(Fixed_Date,1),Residential_City,fill = list(n = 0))%>%
+        group_by(Residential_City)%>%
+        mutate(zen=ifelse(n==0|lag(n)==0,0,n/lag(n)))%>%
+        ungroup()
+                
+    data10<-reactive({
+        data9%>%
+            filter(Fixed_Date<=input$date2,Fixed_Date>=input$date2-6)%>%
+            group_by(Residential_City)%>%
+            summarise(kika1=prod(zen)^(1/7))%>%
+            left_join(data8(),by="Residential_City")
+            
+    })
+    data11<-reactive({
+        data9%>%
+            filter(Fixed_Date<=input$date2-7,Fixed_Date>=input$date2-6-7)%>%
+            group_by(Residential_City)%>%
+            summarise(kika2=prod(zen)^(1/7))%>%
+            left_join(data10(),by="Residential_City")%>%
+            filter(kika1!=0&kika2!=0)
+        
+    })
     output$line3<-
         renderPlot({
-            data9()%>%
-                ggplot(aes(x=count1_j7,y=zouka1,colour=ifelse(Residential_City%in%input$pre,"選択した都道府県","それ以外の都道府県")))+
-                geom_segment(aes(xend=count2_j7,yend=zouka2))+
+            data11()%>%
+                ggplot(aes(x=count1_j7,y=kika1,colour=ifelse(Residential_City%in%input$pre,"選択した都道府県","それ以外の都道府県")))+
+                geom_segment(aes(xend=count2_j7,yend=kika2))+
                 geom_point()+
                 geom_text_repel(aes(label=Residential_City))+
                 geom_vline(xintercept=c(0,2.5,15,25),colour = c("black", "yellow","orange","red"))+
-                geom_text(aes(x=2.5,y=3,label="ステージ2", angle=90))+
-                geom_text(aes(x=15,y=3,label="ステージ3", angle=90))+
-                geom_text(aes(x=25,y=3,label="ステージ4", angle=90))+
+                geom_text(aes(x=2.5,y=0.5,label="ステージ2", angle=90))+
+                geom_text(aes(x=15,y=0.5,label="ステージ3", angle=90))+
+                geom_text(aes(x=25,y=0.5,label="ステージ4", angle=90))+
                 geom_hline(yintercept=c(0,1.0,1.05,1.10,1.15),colour = c("black", "yellow","orange","pink","red"))+
                 geom_text(aes(x=35,y=1,label="同数"))+
                 geom_text(aes(x=40,y=1.05,label="14日で倍"))+
@@ -393,22 +423,22 @@ server <- function(input, output) {
                 labs(x="累積7日",y="増加率",colour="都道府県")+
                 scale_x_continuous(breaks = seq(0,input$num3,5),limits = c(0,input$num3))+
                 scale_y_continuous(breaks = seq(0,input$num4,1.0),limits = c(0,input$num4))+
-                ggtitle(paste0("人口10万人当たりの累積感染者数と増加率（",input$date2,"）"))+
+                ggtitle(paste0("人口10万人当たりの累積感染者数と前日比幾何平均（",input$date2,"）"))+
                 scale_colour_manual(values = c("選択した都道府県"="red","それ以外の都道府県"="black"))
             
         })
     output$line4<-
         renderPlot({
-            data9()%>%
-                ggplot(aes(x=zouka1,y=zouka2,colour=ifelse(Residential_City%in%input$pre,"選択した都道府県","それ以外の都道府県")))+
+            data11()%>%
+                ggplot(aes(x=kika1,y=kika2,colour=ifelse(Residential_City%in%input$pre,"選択した都道府県","それ以外の都道府県")))+
                 geom_point()+
                 #geom_smooth(method = "lm")+
                 geom_text_repel(aes(label=Residential_City))+
                 geom_vline(xintercept=c(0,1.0,1.05,1.10,1.15),colour = c("black", "yellow","orange","pink","red"))+
-                geom_text(aes(x=1,y=1,label="同数", angle=90))+
-                geom_text(aes(x=1.05,y=1,label="14日で倍", angle=90))+
-                geom_text(aes(x=1.10,y=1,label="7日で倍", angle=90))+
-                geom_text(aes(x=1.15,y=1,label="5日で倍", angle=90))+
+                geom_text(aes(x=1,y=0.5,label="同数", angle=90))+
+                geom_text(aes(x=1.05,y=0.5,label="14日で倍", angle=90))+
+                geom_text(aes(x=1.10,y=0.5,label="7日で倍", angle=90))+
+                geom_text(aes(x=1.15,y=0.5,label="5日で倍", angle=90))+
                 geom_text(aes(x=0,y=1,label="同数"))+
                 geom_text(aes(x=0.1,y=1.05,label="14日で倍"))+
                 geom_text(aes(x=0.2,y=1.10,label="7日で倍"))+
