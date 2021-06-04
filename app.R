@@ -111,7 +111,7 @@ ui <- fluidPage(
                                               value=100)
                                             )),
                                  plotOutput("line2")),
-                        tabPanel("10万人当たりの感染者数と前日比幾何平均",
+                        tabPanel("10万人当たりの感染者数と増加率",
                                  fluidRow(
                                      column(6,
                                             numericInput("num3","x軸の最大値の設定",
@@ -332,19 +332,8 @@ server <- function(input, output) {
                 select(Residential_City,count28_2,count2_j28)
             data7<-
                 left_join(data5_3,data5_4)
-            #累積7日_3
-            data5_5<-
-                data5%>%
-                filter(Fixed_Date<=input$date2-7-7,
-                       Fixed_Date>=input$date2-6-7-7)%>%
-                count(Residential_City,jinko)%>%
-                rename("count_3"="n")%>%
-                mutate(count3_j7=count_3/jinko*100000)%>%
-                filter(!is.na(count3_j7))%>%
-                select(Residential_City,count_3,count3_j7)
-          
-            inner_join(data6,data7)%>%
-                left_join(data5_5)
+
+            inner_join(data6,data7)
         })
     output$line2<-
         renderPlot({
@@ -423,7 +412,7 @@ server <- function(input, output) {
                 labs(x="累積7日",y="増加率",colour="都道府県")+
                 scale_x_continuous(breaks = seq(0,input$num3,5),limits = c(0,input$num3))+
                 scale_y_continuous(breaks = seq(0,input$num4,1.0),limits = c(0,input$num4))+
-                ggtitle(paste0("人口10万人当たりの累積感染者数と前日比幾何平均（",input$date2,"）"))+
+                ggtitle(paste0("人口10万人当たりの累積感染者数と増加率平均（",input$date2,"）"))+
                 scale_colour_manual(values = c("選択した都道府県"="red","それ以外の都道府県"="black"))
             
         })
