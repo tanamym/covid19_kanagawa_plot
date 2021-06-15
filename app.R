@@ -141,6 +141,7 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+
     data<-
         fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/coviddata.csv",encoding = "UTF-8")%>%
         filter(!is.na(Fixed_Date))%>%
@@ -370,7 +371,7 @@ server <- function(input, output) {
                 geom_text_repel(aes(label=Residential_City))+
                 #geom_text(aes(label=Residential_City))+
                 labs(x="累積7日",y="累積28日",colour="市区町村")+
-                geom_vline(xintercept=c(0,2.5,15,25),colour = c("black", "yellow","orange","red"))+
+                geom_vline(xintercept=c(0,2.5,15,30),colour = c("black", "yellow","orange","red"))+
                 geom_text(aes(x=7.5,y=10,label="ステージ2"))+
                 geom_text(aes(x=20,y=10,label="ステージ3"))+
                 geom_text(aes(x=45,y=10,label="ステージ4"))+
@@ -427,7 +428,7 @@ server <- function(input, output) {
                 geom_segment(aes(xend=count2_j7,yend=kika2))+
                 geom_point()+
                 geom_text_repel(aes(label=Residential_City))+
-                geom_vline(xintercept=c(0,2.5,15,25),colour = c("black", "yellow","orange","red"))+
+                geom_vline(xintercept=c(0,2.5,15,30),colour = c("black", "yellow","orange","red"))+
                 geom_text(aes(x=7.5,y=1.4,label="ステージ2"))+
                 geom_text(aes(x=20,y=1.4,label="ステージ3"))+
                 geom_text(aes(x=45,y=1.4,label="ステージ4"))+
@@ -466,6 +467,27 @@ server <- function(input, output) {
                 ggtitle(paste("増加率",input$date2,"対先週"))+
                 scale_colour_manual(values = c("選択した市区町村"="red","それ以外の市区町村"="black"))
         })
+    # load("files.RData")
+    # cor<-
+    #     reactive({
+    #         data4()%>%
+    #             select(Residential_City,count,Date)%>%
+    #             pivot_wider(id_cols=Date,
+    #                         names_from = Residential_City,
+    #                         values_from = count)
+    #     })
+    # cor2<-
+    #     reactive({
+    #         correlate(cor()[,-1])%>%shave()%>%
+    #         tidyr::pivot_longer(cols = -1)%>%
+    #         filter(term!=name)%>%
+    #         filter(!is.na(value))
+    # })
+    # 
+    # output$cor<-
+    #     renderPlot({
+    #         ggplot(shp)
+    #     })
 }
 
 # Run the application 
