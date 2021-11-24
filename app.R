@@ -141,11 +141,32 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
-    data<-
-        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/coviddata.csv",encoding = "UTF-8")%>%
-        filter(!is.na(Fixed_Date))%>%
-        mutate(Fixed_Date=as.Date(Fixed_Date))
+    data2020 <-
+        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data2020.csv",encoding="UTF-8")
+    data202106 <-
+        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data202106.csv",encoding="UTF-8")
+    data202109 <-
+        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data202109.csv",encoding="UTF-8")
+    
+    data2021 <-
+        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data2021.csv",encoding="UTF-8")
+    ycd <-
+        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/yoko_covid.csv",encoding="UTF-8") %>%
+        mutate(Fixed_Date=as.Date(Date),
+               Residential_City=City)
+    data <-
+        rbind(data2020,data202106,data202109,data2021) %>%
+        mutate(Fixed_Date=as.Date(Fixed_Date)) %>%
+        arrange(desc(Fixed_Date),Hos,hos)%>%
+        count(Fixed_Date,Residential_City,hos)%>%
+        full_join(ycd%>%
+                      mutate(hos="yokohama"))%>%
+        mutate(Residential_City=ifelse(!is.na(City),City,Residential_City)) %>%
+        mutate(n=ifelse(!is.na(City),count,n))
+    # data<-
+    #     fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/coviddata.csv",encoding = "UTF-8")%>%
+    #     filter(!is.na(Fixed_Date))%>%
+    #     mutate(Fixed_Date=as.Date(Fixed_Date))
     jinko<-
         read.csv("jinko.csv",encoding = "SJIS")
     date1<-
@@ -371,7 +392,7 @@ server <- function(input, output) {
                 geom_text_repel(aes(label=Residential_City))+
                 #geom_text(aes(label=Residential_City))+
                 labs(x="累積7日",y="累積28日",colour="市区町村")+
-                geom_vline(xintercept=c(0,2.5,15,30),colour = c("black", "yellow","orange","red"))+
+                geom_vline(xintercept=c(0,2.5,15,25),colour = c("black", "yellow","orange","red"))+
                 geom_text(aes(x=7.5,y=10,label="ステージ2"))+
                 geom_text(aes(x=20,y=10,label="ステージ3"))+
                 geom_text(aes(x=45,y=10,label="ステージ4"))+
@@ -428,7 +449,7 @@ server <- function(input, output) {
                 geom_segment(aes(xend=count2_j7,yend=kika2))+
                 geom_point()+
                 geom_text_repel(aes(label=Residential_City))+
-                geom_vline(xintercept=c(0,2.5,15,30),colour = c("black", "yellow","orange","red"))+
+                geom_vline(xintercept=c(0,2.5,15,25),colour = c("black", "yellow","orange","red"))+
                 geom_text(aes(x=7.5,y=1.4,label="ステージ2"))+
                 geom_text(aes(x=20,y=1.4,label="ステージ3"))+
                 geom_text(aes(x=45,y=1.4,label="ステージ4"))+
