@@ -152,6 +152,8 @@ server <- function(input, output) {
         fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data202201.csv",encoding="UTF-8")
     data20220215 <-
         fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data20220215.csv",encoding="UTF-8")
+    data20220228 <-
+        fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data20220228.csv",encoding="UTF-8")
     data2022 <-
         fread("https://raw.githubusercontent.com/tanamym/covid19_colopressmap_isehara/main/data2022.csv",encoding="UTF-8")
     ycd <-
@@ -159,7 +161,7 @@ server <- function(input, output) {
         mutate(Fixed_Date=as.Date(Date),
                Residential_City=City)
     data <-
-        rbind(data2020,data202106,data202109,data202201,data20220215,data2022) %>%
+        rbind(data2020,data202106,data202109,data202201,data20220215,data20220228,data2022) %>%
         mutate(Fixed_Date=as.Date(Fixed_Date)) %>%
         arrange(desc(Fixed_Date),Hos,hos)%>%
         count(Fixed_Date,Residential_City,hos)%>%
